@@ -26,8 +26,8 @@ class Product(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     price = models.DecimalField(max_digits=50, decimal_places=2)
-    market = models.ForeignKey(Market, on_delete=models.CASCADE, related_name='products')
-    seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name='products')
+    markets = models.ManyToManyField(Market, related_name="products")
+    seller = models.ManyToManyField(Seller, related_name="products")
 
     def __str__(self):
         return f"{self.name} ({self.price})"
