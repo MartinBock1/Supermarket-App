@@ -1,13 +1,19 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import MarketSerializer, SellerDetailSerializer, SellerCreateSerializer, \
-     ProductDetailSerializer, ProductCreateSerializer
+from .serializers import (
+    MarketSerializer, SellerDetailSerializer, SellerCreateSerializer,
+    ProductDetailSerializer, ProductCreateSerializer
+)
 from supermarket_app.models import Market, Seller, Product
 
 
 @api_view(['GET', 'POST'])
 def markets_view(request):
+    """
+    API-Endpunkt für das Abrufen aller Märkte (GET)
+    und das Erstellen eines neuen Marktes (POST).
+    """
     if request.method == 'GET':
         markets = Market.objects.all()
         serializer = MarketSerializer(markets, many=True)
@@ -24,13 +30,22 @@ def markets_view(request):
 
 @api_view(['GET', 'DELETE', 'PUT'])
 def market_single_view(request, pk):
-    if request.method == 'GET':
+    """
+    API-Endpunkt für einzelne Märkte:
+    - GET: Gibt Details eines Markts zurück.
+    - PUT: Aktualisiert einen Markt (teilweise erlaubt mit partial=True).
+    - DELETE: Löscht den Markt und gibt ihn zurück.
+    """
+    try:
         market = Market.objects.get(pk=pk)
+    except Market.DoesNotExist:
+        return Response({"error": "Market not found"}, status=404)
+
+    if request.method == 'GET':
         serializer = MarketSerializer(market)
         return Response(serializer.data)
 
     if request.method == 'PUT':
-        market = Market.objects.get(pk=pk)
         serializer = MarketSerializer(market, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -39,7 +54,6 @@ def market_single_view(request, pk):
             return Response(serializer.errors)
 
     if request.method == 'DELETE':
-        market = Market.objects.get(pk=pk)
         serializer = MarketSerializer(market)
         market.delete()
         return Response(serializer.data)
@@ -47,6 +61,11 @@ def market_single_view(request, pk):
 
 @api_view(['GET', 'POST'])
 def sellers_view(request):
+    """
+    API-Endpunkt für Verkäufer:
+    - GET: Gibt alle Verkäufer mit Detailinformationen zurück.
+    - POST: Erstellt einen neuen Verkäufer, erwartet Market-IDs.
+    """
     if request.method == 'GET':
         sellers = Seller.objects.all()
         serializer = SellerDetailSerializer(sellers, many=True)
@@ -63,6 +82,11 @@ def sellers_view(request):
 
 @api_view(['GET', 'POST'])
 def products_view(request):
+    """
+    API-Endpunkt für Produkte:
+    - GET: Gibt alle Produkte zurück, inkl. Märkten und Verkäufern.
+    - POST: Erstellt ein neues Produkt mit Market- und Seller-IDs.
+    """
     if request.method == 'GET':
         products = Product.objects.all()
         serializer = ProductDetailSerializer(products, many=True)
