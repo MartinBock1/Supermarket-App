@@ -63,52 +63,81 @@ class MarketSerializer(serializers.ModelSerializer):
     - für die Darstellung von Market-Daten (GET)
     - für das Erstellen oder Aktualisieren von Märkten (POST/PUT)
     """
+    
+    sellers = serializers.StringRelatedField(many=True, read_only=True)
+    
     class Meta:
         model = Market
         fields = '__all__'
         # exclude = ['id']
+    
+    def get_sellers():
+        pass
 
 
-class SellerDetailSerializer(serializers.Serializer):
-    """
-    Detail-Serializer für Verkäufer (Lesen von Daten).
-    Gibt Verkäuferdaten zusammen mit den zugehörigen Märkten zurück.
-    """
-    id = serializers.IntegerField(read_only=True)
-    name = serializers.CharField(max_length=255)
-    contact_info = serializers.CharField()
-    # Märkte werden als String angezeigt (entspricht __str__)
-    markets = serializers.StringRelatedField(many=True)
-    # Alternativ: strukturierte Ausgabe
-    # markets = MarketSerializer(read_only=True, many=True)
+class SellerSerializer(serializers.ModelSerializer):
+    markets = MarketSerializer(read_only=True, many=True)
+    market_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Market.objects.all(),
+        many=True,
+        write_only=True,
+        source='markets'
+    )
+
+    market_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Seller
+        fields = ["id", "name", "market_ids", "market_count", "markets", "contact_info"]
+
+    def get_market_count(self, obj):
+        return obj.markets.count()
 
 
-class SellerCreateSerializer(serializers.Serializer):
-    """
-    Serializer für das Erstellen eines Sellers mit zugehörigen Market-IDs.
-    """
-    name = serializers.CharField(max_length=255)
-    contact_info = serializers.CharField()
-    markets = serializers.ListField(child=serializers.IntegerField(), write_only=True)
+# WICHTIG:
+"""
+Der 'SellerSerializer' ersetzt 'SellerDetailSerializer' & 'SellerCreateSerializer' 
+"""
+# class SellerDetailSerializer(serializers.Serializer):
+#     """
+#     Detail-Serializer für Verkäufer (Lesen von Daten).
+#     Gibt Verkäuferdaten zusammen mit den zugehörigen Märkten zurück.
+#     """
+#     id = serializers.IntegerField(read_only=True)
+#     name = serializers.CharField(max_length=255)
+#     contact_info = serializers.CharField()
+#     # Märkte werden als String angezeigt (entspricht __str__)
+#     markets = serializers.StringRelatedField(many=True)
+#     # Alternativ: strukturierte Ausgabe
+#     # markets = MarketSerializer(read_only=True, many=True)
 
-    def validate_markets(self, value):
-        """
-        Validiert, ob alle angegebenen Market-IDs existieren.
-        """
-        markets = Market.objects.filter(id__in=value)
-        if len(markets) != len(value):
-            raise serializers.ValidationError({"message": "One or more Market IDs not found"})
-        return value
 
-    def create(self, validated_data):
-        """
-        Erstellt einen neuen Seller und verknüpft ihn mit Märkten.
-        """
-        market_ids = validated_data.pop('markets')
-        seller = Seller.objects.create(**validated_data)
-        markets = Market.objects.filter(id__in=market_ids)
-        seller.markets.set(markets)
-        return seller
+# class SellerCreateSerializer(serializers.Serializer):
+#     """
+#     Serializer für das Erstellen eines Sellers mit zugehörigen Market-IDs.
+#     """
+#     name = serializers.CharField(max_length=255)
+#     contact_info = serializers.CharField()
+#     markets = serializers.ListField(child=serializers.IntegerField(), write_only=True)
+
+#     def validate_markets(self, value):
+#         """
+#         Validiert, ob alle angegebenen Market-IDs existieren.
+#         """
+#         markets = Market.objects.filter(id__in=value)
+#         if len(markets) != len(value):
+#             raise serializers.ValidationError({"message": "One or more Market IDs not found"})
+#         return value
+
+#     def create(self, validated_data):
+#         """
+#         Erstellt einen neuen Seller und verknüpft ihn mit Märkten.
+#         """
+#         market_ids = validated_data.pop('markets')
+#         seller = Seller.objects.create(**validated_data)
+#         markets = Market.objects.filter(id__in=market_ids)
+#         seller.markets.set(markets)
+#         return seller
 
 
 class ProductDetailSerializer(serializers.Serializer):
