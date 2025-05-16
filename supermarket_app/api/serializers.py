@@ -19,32 +19,54 @@ def validate_no_x(value):
     return value
 
 
-class MarketSerializer(serializers.Serializer):
-    """
-    Serializer für Markt-Daten. Wird für Erstellen und Anzeigen verwendet.
-    """
-    id = serializers.IntegerField(read_only=True)
-    name = serializers.CharField(max_length=55)
-    location = serializers.CharField(max_length=255, validators=[validate_no_x])
-    description = serializers.CharField()
-    net_worth = serializers.DecimalField(max_digits=100, decimal_places=2)
+# class MarketSerializer(serializers.Serializer):
+#     """
+#     Serializer für Markt-Daten. Wird für Erstellen und Anzeigen verwendet.
+#     """
+#     id = serializers.IntegerField(read_only=True)
+#     name = serializers.CharField(max_length=55)
+#     location = serializers.CharField(max_length=255, validators=[validate_no_x])
+#     description = serializers.CharField()
+#     net_worth = serializers.DecimalField(max_digits=100, decimal_places=2)
 
-    def create(self, validated_data):
-        """
-        Erstellt ein neues Market-Objekt aus validierten Daten.
-        """
-        return Market.objects.create(**validated_data)
+#     def create(self, validated_data):
+#         """
+#         Erstellt ein neues Market-Objekt aus validierten Daten.
+#         """
+#         return Market.objects.create(**validated_data)
 
-    def update(self, instance, validated_data):
-        """
-        Aktualisiert ein bestehendes Market-Objekt mit neuen Daten.
-        """
-        instance.name = validated_data.get('name', instance.name)
-        instance.location = validated_data.get('location', instance.location)
-        instance.description = validated_data.get('description', instance.description)
-        instance.net_worth = validated_data.get('net_worth', instance.net_worth)
-        instance.save()
-        return instance
+#     def update(self, instance, validated_data):
+#         """
+#         Aktualisiert ein bestehendes Market-Objekt mit neuen Daten.
+#         """
+#         instance.name = validated_data.get('name', instance.name)
+#         instance.location = validated_data.get('location', instance.location)
+#         instance.description = validated_data.get('description', instance.description)
+#         instance.net_worth = validated_data.get('net_worth', instance.net_worth)
+#         instance.save()
+#         return instance
+
+
+class MarketSerializer(serializers.ModelSerializer):
+    """
+    Serializer für das Market-Modell.
+
+    Dieser Serializer verwendet Django REST Frameworks ModelSerializer, 
+    um automatisch alle Felder des Market-Modells zu serialisieren.
+
+    Vorteile:
+    - Alle Felder aus dem Market-Modell werden automatisch eingebunden (id, name, location, description, net_worth).
+    - Die Methoden create() und update() werden intern generiert.
+    - Felder werden automatisch validiert basierend auf den Model-Felddefinitionen.
+
+    Verwendet:
+    - für die Darstellung von Market-Daten (GET)
+    - für das Erstellen oder Aktualisieren von Märkten (POST/PUT)
+    """
+    class Meta:
+        model = Market
+        fields = '__all__'
+        # exclude = ['id']
 
 
 class SellerDetailSerializer(serializers.Serializer):
